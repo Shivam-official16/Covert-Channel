@@ -21,7 +21,7 @@
 #define CPU     0
 #define FANOUT  16    // number of concurrent forks
 #define BURST_MS 500 
-#define THRESHOLD 1000000
+#define THRESHOLD 10000000
 static long now_ms(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -99,7 +99,7 @@ int main()
    
 //-----------------------setup for pointer chasing-----------------------------------------------
 
-   size_t size_bytes = 8*1024* 1024; // 8 MB for LLC
+    size_t size_bytes = 8*1024* 1024; // 8 MB for LLC
     size_t n_nodes = size_bytes / CACHE_LINE;
 
     Node *nodes = aligned_alloc(CACHE_LINE, n_nodes * sizeof(Node));
@@ -136,7 +136,7 @@ int main()
 
 
 //Thrash LLC
- uint64_t trhash_start=rdtsc();     
+  uint64_t trhash_start=rdtsc();     
     Node *current = &nodes[0];
     for (size_t i = 0; i < n_nodes; i++) {
         current = current->next;
@@ -148,7 +148,7 @@ int main()
   
   
   
- const uint64_t offset_ns = 1ULL * 1000000000ULL;  // 1 seconds in ns
+const uint64_t offset_ns = 1ULL * 1000000000ULL;  // 1 seconds in ns
 const uint64_t interval = 10000000000ULL; 
 uint64_t target_time = getTime() + offset_ns;
 uint64_t next_boundary =( (target_time / interval) + 1) * interval;
@@ -156,7 +156,8 @@ printf("Synchronizing...Next Boundary is: %ld\n",next_boundary);
 while (getTime() < next_boundary) {
     __asm__ __volatile__("pause");
 }
-
+int i; 
+uint64_t s,e,diff;
 //----------------------------------Synching Complete----------------------------------  
 printf("-------------STARTING----------------\n");
 //-----------------------Starting access--------------------------------------------------------- 
@@ -164,12 +165,12 @@ printf("-------------STARTING----------------\n");
 //--------Interrupt->Buffer Access->access time
 interrupts(5000);
  current = &nodes[indices[0]];  
-    uint64_t s =getTime();
-      for (int i = 0; i < n_nodes; i++) {             
+    s =rtdscp();
+      for (i = 0; i < n_nodes; i++) {             
        current = current->next;
       } 
-    uint64_t e=getTime();
-    uint64_t diff=e-s;
+    e=rdtscp();
+    diff=e-s;
      printf("Time taken for complete LLC access:%ld ns \n",diff);
      printf("Time taken for complete LLC access:%ld ms\n",diff/1000000);
       

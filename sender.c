@@ -106,13 +106,13 @@ if(send==1)
  Node *current = &nodes[0];
  
  //  current = &nodes[indices[0]];  
-      uint64_t s =getTime();  
+      uint64_t s =rtdscp();  
        while((getTime()-s)< 5030000000ULL) {             
          current = current->next;
        } 
     
    
-       uint64_t e=getTime();
+       uint64_t e=rdtscp();
       uint64_t diff=e-s;
     printf("Time taken to send 1 %ld ns \n",diff);
       printf("Time taken to send 1 in:%ld ms\n",diff/1000000);

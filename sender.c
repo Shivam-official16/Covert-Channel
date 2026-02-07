@@ -15,13 +15,14 @@
 #define BIT 1
 #define SEC_TO_NS(sec) ((uint64_t)(sec) * 1000000000ULL)
 //----------------------------------------------------------
-#define CACHE_LINE 64UL   // 64 bytes per cache line
+#define CACHE_LINE 64   // 64 bytes per cache line
 
 
 typedef struct Node {
     struct Node *next;
     char padding[CACHE_LINE - sizeof(struct Node *)]; // Ensure each node is in a separate cache line
 } Node;
+
 
 struct timespec ts;
 uint64_t getTime()
@@ -36,14 +37,12 @@ return now_ns;
 
 int main(int argc,char *argv[])
 {
-  uint64_t x=27612750;
-// printf("I am here:");
-  uint64_t start =rdtsc();
-  printf("start: %lu \n",start);
+int i; 
+uint64_t s,e,diff;
+ uint32_t aux;
 
 //--------------------------------------------------MY CODE------------------------------------------------------
 int send=atoi(argv[1]);
-
 printf("sending %d\n",send);
 
 
@@ -75,21 +74,17 @@ printf("sending %d\n",send);
     }
     nodes[indices[n_nodes - 1]].next = &nodes[indices[0]]; // Make it circular  
 //---------------------------------------------------------------------------------------------------    
-Node *current = &nodes[0];
-  for (int i = 0; i < n_nodes; i++) {             
-         current = current->next;
-       } 
-//--------------------------------------Synching---------------------------------------------------
-//uint64_t now;
-//now =rdtsc();
-//printf("now: %lu\n",now);
-// printf("I am here:");
 
-// while(now-start<6800000000){
- // printf("difference: %lu \n",now-start);
-  //now=rdtsc();
- //}
+//--------------------------------------Synching---------------------------------------------------
+
  
+// const uint64_t offset = 100;
+// const uint64_t interval = 100; 
+// uint64_t target_time = __rdtscp(&aux) + offset;
+// uint64_t next_boundary =( (target_time / interval) + 1) * interval;
+// printf("Synchronizing...Next Boundary is: %ld\n",next_boundary);
+// while (__rdtscp(&aux) < next_boundary);
+
  const uint64_t offset_ns = 1ULL * 1000000000ULL;  // 1 seconds in ns
 const uint64_t interval = 10000000000ULL; 
 uint64_t target_time = getTime() + offset_ns;
@@ -98,29 +93,34 @@ printf("Synchronizing...Next Boundary is: %ld\n",next_boundary);
 while (getTime() < next_boundary) {
     __asm__ __volatile__("pause");
 }
+
+
 //---------------------synching completed-----------------------------------------------------------
 printf("-------------STARTING----------------\n");
 //-----------------------Starting access---------------------------------------------------------
+ Node *current = &nodes[0];
+s=__rdtscp(&aux);
 if(send==1)
 {
- Node *current = &nodes[0];
- 
- //  current = &nodes[indices[0]];  
-      uint64_t s =rtdscp();  
-       while((getTime()-s)< 5030000000ULL) {             
-         current = current->next;
-       } 
+ current = &nodes[0];
+
     
-   
-       uint64_t e=rdtscp();
-      uint64_t diff=e-s;
-    printf("Time taken to send 1 %ld ns \n",diff);
-      printf("Time taken to send 1 in:%ld ms\n",diff/1000000);
+   current = &nodes[indices[0]];  
+      while(__rdtscp(&aux)-s<17400964522)
+      {
+         current->padding[0]='B';           
+        current = current->next;
+      }
+    e=__rdtscp(&aux);
+    diff=e-s;
+      printf("L2 access: %ld cycles\n",diff);
+      printf("L2 latency: %ld", diff/n_nodes);
+
   
 }
 else
 {          
-     usleep(5030000);
+      while(__rdtscp(&aux)-s<17426513386);
      printf("Sent 0 \n");
 
 }

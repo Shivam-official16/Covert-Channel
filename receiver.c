@@ -19,9 +19,9 @@
 #define SEC_TO_NS(sec) ((uint64_t)(sec) * 1000000000ULL)
 #define f
 #define CPU     0
-#define FANOUT  16    // number of concurrent forks
+#define FANOUT  10    // number of concurrent forks
 #define BURST_MS 500 
-#define THRESHOLD 10000000
+#define THRESHOLD 18000
 static long now_ms(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -90,16 +90,14 @@ return now_ns;
 int main()
 { 
 
-      uint64_t count=0;
-      uint64_t start =rdtsc();
+int i; 
+uint64_t s,e,diff,is,ie,idiff;
+ uint32_t aux;
 
-      uint64_t y= 25472580;
-  printf("start: %lu \n",start);
-
-   
+      uint64_t count=0;   
 //-----------------------setup for pointer chasing-----------------------------------------------
 
-    size_t size_bytes = 8*1024* 1024; // 8 MB for LLC
+    size_t size_bytes =2*1024* 1024; // 8 MB for LLC
     size_t n_nodes = size_bytes / CACHE_LINE;
 
     Node *nodes = aligned_alloc(CACHE_LINE, n_nodes * sizeof(Node));
@@ -125,30 +123,12 @@ int main()
     }
     nodes[indices[n_nodes - 1]].next = &nodes[indices[0]]; // Make it circular  
 
+
+//----------------------------Thrash LLC---------------------------------------
+
 //------------------------------Synching ----------------------------------------------    
-//uint64_t now;
-//now =rdtsc();
 
-// while(now-start<6800000000){
- //printf("difference: %lu \n",now-start);
-//  now=rdtsc();
-// }
-
-
-//Thrash LLC
-  uint64_t trhash_start=rdtsc();     
-    Node *current = &nodes[0];
-    for (size_t i = 0; i < n_nodes; i++) {
-        current = current->next;
-    }
-  _mm_mfence();
-  uint64_t thrash_end= rdtsc();
-  printf("thashing LLC took (aka y) : %lu\n", thrash_end-trhash_start);
-  
-  
-  
-  
-const uint64_t offset_ns = 1ULL * 1000000000ULL;  // 1 seconds in ns
+ const uint64_t offset_ns = 1ULL * 1000000000ULL;  // 1 seconds in ns
 const uint64_t interval = 10000000000ULL; 
 uint64_t target_time = getTime() + offset_ns;
 uint64_t next_boundary =( (target_time / interval) + 1) * interval;
@@ -156,26 +136,52 @@ printf("Synchronizing...Next Boundary is: %ld\n",next_boundary);
 while (getTime() < next_boundary) {
     __asm__ __volatile__("pause");
 }
-int i; 
-uint64_t s,e,diff;
+    
+
+
 //----------------------------------Synching Complete----------------------------------  
 printf("-------------STARTING----------------\n");
 //-----------------------Starting access--------------------------------------------------------- 
- 
+
 //--------Interrupt->Buffer Access->access time
-interrupts(5000);
- current = &nodes[indices[0]];  
-    s =rtdscp();
-      for (i = 0; i < n_nodes; i++) {             
+is =__rdtscp(&aux);
+ Node *current = &nodes[indices[0]];  
+    s =__rdtscp(&aux);
+      for (i = 0; i < n_nodes; i++) {  
+        current->padding[0]='A';           
        current = current->next;
       } 
-    e=rdtscp();
+    e=__rdtscp(&aux);
     diff=e-s;
-     printf("Time taken for complete LLC access:%ld ns \n",diff);
-     printf("Time taken for complete LLC access:%ld ms\n",diff/1000000);
+     printf("Thrash Difference:%ld cycles \n",diff);
+      printf("Thrash LLC latency: %ld cycles \n", diff/n_nodes);
+      _mm_mfence();
+interrupts(5000);
+
+_mm_mfence();
+
+
+ current = &nodes[indices[0]];  
+    s =__rdtscp(&aux);
+
+    while(__rdtscp(&aux)-s<5033950)
+    {
+             count++;
+        current->padding[0]='B';           
+       current = current->next;
+    }
+    e=__rdtscp(&aux);
+    ie =__rdtscp(&aux);
+    diff=e-s;
+    idiff=ie-is;
+     printf("Difference:%ld cycles \n",diff);
+      printf("LLC latency: %ld cycles \n", diff/n_nodes);
+      printf("Total cyles: %ld cycles\n",idiff);
+      printf("Count: %d \n",count);
+
       
 
-if(diff>THRESHOLD)
+if(count>THRESHOLD)
 printf("received 0\n");
 else
 printf("received 1\n");

@@ -21,7 +21,7 @@
 #define CPU     0
 #define FANOUT  10    // number of concurrent forks
 #define BURST_MS 500 
-#define THRESHOLD 18000
+#define THRESHOLD 1500
 static long now_ms(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -97,7 +97,7 @@ uint64_t s,e,diff,is,ie,idiff;
       uint64_t count=0;   
 //-----------------------setup for pointer chasing-----------------------------------------------
 
-    size_t size_bytes =2*1024* 1024; // 8 MB for LLC
+    size_t size_bytes =8*1024* 1024; // 8 MB for LLC
     size_t n_nodes = size_bytes / CACHE_LINE;
 
     Node *nodes = aligned_alloc(CACHE_LINE, n_nodes * sizeof(Node));
@@ -177,7 +177,7 @@ _mm_mfence();
      printf("Difference:%ld cycles \n",diff);
       printf("LLC latency: %ld cycles \n", diff/n_nodes);
       printf("Total cyles: %ld cycles\n",idiff);
-      printf("Count: %d \n",count);
+      printf("Count: %ld \n",count);
 
       
 

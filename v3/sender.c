@@ -129,7 +129,7 @@ printf("\n");
 
 //-----------------------setup for pointer chasing-----------------------------------------------
 
-   size_t size_bytes = 1365*1024; // 1365KB for L2
+   size_t size_bytes = 700*1024; // 1280KB for L2
     size_t n_nodes = size_bytes / CACHE_LINE;
 
     Node *nodes = aligned_alloc(CACHE_LINE, n_nodes * sizeof(Node));
@@ -214,7 +214,7 @@ if(key[q]==1)
       diff=e-s;
     //   printf("L2 access: %ld cycles\n",diff);
     //printf("L2 latency: %ld\n", diff/(25000*n_nodes));
-     //printf("L2 latency: %lf\n", diff/(float)(count));
+    // printf("L2 latency: %lf\n", diff/(float)(count));
     //   printf("1\n");
     // printf("Count: %ld \n",count);
  }
@@ -226,10 +226,10 @@ if(key[q]==1)
     }  
 
 } 
-for(int q=0;q<key_size;q++)
-{
-printf("%d",key[q]);}
-printf("\n");
+// for(int q=0;q<key_size;q++)
+// {
+// printf("%d",key[q]);}
+// printf("\n");
     return 0;
 
 

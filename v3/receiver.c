@@ -22,7 +22,7 @@
 #define FANOUT  10    // number of concurrent forks
 #define BURST_MS 500 
 // #define THRESHOLD 1064411452 
-#define THRESHOLD 1117750530 
+#define THRESHOLD 475000 
 #define SLOT 5000000ULL 
 static long now_ms(void) {
     struct timespec ts;
@@ -156,13 +156,12 @@ int rcvd[keysize];
  Node *current = &nodes[indices[0]];  
     s =__rdtscp(&aux);
      for(i=0;i<n_nodes;i++)
-    nodes[i].padding[0]++; 
+    {  
+         nodes[i].padding[0]='A';
+         count++;
+    }
+    printf("%ld and %c \n--------------------\n",count,nodes[i-2].padding[0]);
     e=__rdtscp(&aux);
-    diff=e-s;
-    // printf("Thrash Difference cold:%ld cycles \n",diff);
-     // printf("Thrash LLC latency cold: %ld cycles \n", diff/n_nodes);
-      
-
 //----------------------------Synching---------------------------------
 
 // sync_to_slot(SLOT);
@@ -183,23 +182,37 @@ printf("-------------STARTING----------------\n");
 //--------Interrupt->Buffer Access->access time
 for(int q=0;q<keysize;q++)
 {
-// if(q>0)
-// sleep(15);
 count=0;
+
 is =__rdtscp(&aux);
 isc=getTime();
 interrupts(2500);
-
 _mm_mfence();
-
-
  current = &nodes[indices[0]];  
-    s =__rdtscp(&aux);
+  s =__rdtscp(&aux);
    int j=0;
-    //  for(i=0;i<30*n_nodes;i++)
-    //  {
     i=0;
-    while(__rdtscp(&aux)-s<22515813285)
+//    for(int k=0;k<120;k++)
+//    {
+
+   
+//      s =__rdtscp(&aux);
+//     while(__rdtscp(&aux)-s<20000000)
+//      {
+//      j=i%n_nodes;
+//     nodes[j].padding[0]++;
+//     count++;
+//      i++;
+   
+//      }
+//        _mm_mfence();
+//       interrupts(70);
+//     _mm_mfence();
+//     }
+//     e=__rdtscp(&aux);
+//     diff=e-s;
+/////////////////////////////////////////////////////////////////////////////////// 
+while(__rdtscp(&aux)-s<20000000)
      {
      j=i%n_nodes;
     nodes[j].padding[0]++;
@@ -207,12 +220,8 @@ _mm_mfence();
      i++;
      }
     e=__rdtscp(&aux);
-  
     diff=e-s;
-   
-    // printf("Difference:%ld cycles \n",diff);
-    //  printf("LLC latency: %ld cycles \n", diff/(30*n_nodes));
-     // printf("Count: %ld \n",count);
+
 _mm_mfence();
 interrupts(2500);
 
@@ -220,14 +229,8 @@ _mm_mfence();
 
    s =__rdtscp(&aux);
    j=0;
-    //  for(i=0;i<30*n_nodes;i++)
-    //  {
-       // j=i%n_nodes;
-  //  nodes[j].padding[0]++;
-     
-     // }
         i=0;
-    while(__rdtscp(&aux)-s<22515813285)
+    while(__rdtscp(&aux)-s<20000000)
      {
      j=i%n_nodes;
     nodes[j].padding[0]++;
@@ -235,15 +238,16 @@ _mm_mfence();
      i++;
      }
     e=__rdtscp(&aux);
-   iec=getTime();
+///////////////////////////////////////////////////////////////////////////////    
+  iec=getTime();
     ie =__rdtscp(&aux);
     diff=e-s;
     idiff=ie-is;
     // printf("Difference:%ld cycles \n",diff);
      // printf("LLC latency: %ld cycles \n", diff/(30*n_nodes));
      printf("Count: %ld \n",count);
-     // printf("Total cyles: %ld cycles\n",idiff);
-     // printf("Time 1: %ld microsec\n",(iec-isc)/1000);
+     printf("Total cyles: %ld cycles\n",idiff);
+     printf("Time 1: %ld microsec\n",(iec-isc)/1000);
      // 
 
 if(count<THRESHOLD)

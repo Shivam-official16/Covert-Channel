@@ -190,8 +190,7 @@ printf("-------------STARTING----------------\n");
 
  for(int q=0;q<key_size;q++)
  {
-//  if(q>0)
-//  sleep(15);
+
 if(key[q]==1)
 {   count=0;
     s=__rdtscp(&aux);
@@ -203,7 +202,7 @@ if(key[q]==1)
         //      nodes[j].padding[0]++;
         //   }
     i=0;
-    while(__rdtscp(&aux)-s<65601974657)
+    while(__rdtscp(&aux)-s<18217760734)
      {
         j=i%n_nodes;
         nodes[j].padding[0]++;
@@ -220,7 +219,7 @@ if(key[q]==1)
  }
     else
     {  s=__rdtscp(&aux);
-      usleep(20998244);
+      usleep(5047029);
     //   while(__rdtscp(&aux)-s<65601974657);
      // printf("0\n");
     }  
